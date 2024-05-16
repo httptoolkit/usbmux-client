@@ -2,9 +2,13 @@
   "name": "usbmux-client",
   "version": "0.0.0",
   "description": "A pure-js Node.js library for communicating with iPhones over USB via usbmux",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prebuild": "rimraf dist/",
+    "build": "tsc",
+    "prepack": "npm run build",
+    "pretest": "npm run build",
+    "test": "mocha -r ts-node/register 'test/**/*.spec.ts'"
   },
   "repository": {
     "type": "git",
@@ -23,5 +27,14 @@
   "bugs": {
     "url": "https://github.com/httptoolkit/usbmux-client/issues"
   },
-  "homepage": "https://github.com/httptoolkit/usbmux-client#readme"
+  "homepage": "https://github.com/httptoolkit/usbmux-client#readme",
+  "devDependencies": {
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.6",
+    "chai": "^4.4.1",
+    "mocha": "^10.4.0",
+    "rimraf": "^5.0.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
 }

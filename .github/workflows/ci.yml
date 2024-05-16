@@ -1,0 +1,24 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build:
+    name: Build & test
+    runs-on: ubuntu-latest
+    container: httptoolkit/act-build-base:v3.0.0
+
+    strategy:
+      matrix:
+        node-version: [v20.x, v20.11.1, v22.x, '*']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          check-latest: true
+          cache: 'npm'
+          cache-dependency-path: 'package.json'
+
+      - run: npm install
+      - run: npm test
