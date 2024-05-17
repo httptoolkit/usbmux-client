@@ -29,12 +29,17 @@
   },
   "homepage": "https://github.com/httptoolkit/usbmux-client#readme",
   "devDependencies": {
+    "@httptoolkit/util": "^0.1.2",
     "@types/chai": "^4.3.16",
     "@types/mocha": "^10.0.6",
+    "@types/plist": "^3.0.5",
     "chai": "^4.4.1",
     "mocha": "^10.4.0",
     "rimraf": "^5.0.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "plist": "^3.1.0"
   }
 }
