@@ -4,7 +4,7 @@ jobs:
   build:
     name: Build & test
     runs-on: ubuntu-latest
-    container: httptoolkit/act-build-base:v3.0.0
+    container: httptoolkit/act-build-base:v3.0.1
 
     strategy:
       matrix:
@@ -19,6 +19,11 @@ jobs:
           check-latest: true
           cache: 'npm'
           cache-dependency-path: 'package.json'
+
+      - name: Install and start usbmuxd
+        # This isn't actually usable - we can't access USBs - but it's enough to give us
+        # a socket file & daemon to do very basic testing against.
+        run: sudo apt update && sudo apt install -y usbmuxd && sudo usbmuxd
 
       - run: npm install
       - run: npm test
