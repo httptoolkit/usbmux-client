@@ -98,7 +98,7 @@ class UsbmuxClient {
         this.listenToMessages(socket)
     }
 
-    private deviceData: Record<number, Record<string, string | number>> = {};
+    private deviceData: Record<string, Record<string, string | number>> = {};
 
     // Listen for events by using readMessageFromStream in an async iterator:
     async listenToMessages(socket: net.Socket) {
