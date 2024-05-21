@@ -61,29 +61,39 @@ type ResponseMessage =
     | AttachedMessage
     | DetachedMessage;
 
+const isReadablePromise = (stream: net.Socket) => new Promise<void>((resolve, reject) => {
+    stream.once('readable', resolve);
+    stream.once('close', resolve);
+    stream.once('error', reject);
+});
+
+const readBytes = (socket: net.Socket, bytesToRead: number) => {
+    const data = socket.read(bytesToRead);
+    if (!data) return;
+    if (data.byteLength > bytesToRead) {
+        // Stream is finished - take the bit we want and put the rest back
+        socket.unshift(data.slice(bytesToRead));
+        return data.slice(0, bytesToRead);
+    }
+
+    return data;
+}
+
 const readMessageFromStream = async (stream: net.Socket): Promise<ResponseMessage | null> => {
     if (stream.closed) return null;
 
-    const header = stream.read(16);
+    const header = readBytes(stream, 16);
     if (!header) {
-        await new Promise((resolve, reject) => {
-            stream.once('readable', resolve);
-            stream.once('close', resolve);
-            stream.once('error', reject);
-        });
+        await isReadablePromise(stream);
         return readMessageFromStream(stream);
     }
 
     const payloadLength = header.readUInt32LE(0) - 16; // Minus the header length
 
-    const payload = stream.read(payloadLength);
+    const payload = readBytes(stream, payloadLength);
     if (!payload) {
         stream.unshift(header);
-        await new Promise((resolve, reject) => {
-            stream.once('readable', resolve);
-            stream.once('close', resolve);
-            stream.once('error', reject);
-        });
+        await isReadablePromise(stream);
         return readMessageFromStream(stream);
     }
 
