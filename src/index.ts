@@ -104,6 +104,7 @@ export class UsbmuxClient {
                 this.deviceData = {};
             });
         } catch (e: any) {
+            this.deviceMonitorConnection = undefined;
             connectionDeferred.reject(e);
             throw e;
         }
