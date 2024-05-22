@@ -1,39 +1,12 @@
 import * as net from 'net';
 import * as plist from 'plist';
+import { delay, getDeferred } from '@httptoolkit/util';
+
 import { readBytes } from './stream-utils';
 
 const DEFAULT_ADDRESS = process.platform === 'win32'
     ? { port: 27015 }
     : { path: '/var/run/usbmuxd' };
-
-export async function getUsbmuxClient(
-    connectionOptions: net.NetConnectOpts = DEFAULT_ADDRESS
-) {
-    const conn = net.connect(connectionOptions);
-
-    await new Promise((resolve, reject) => {
-        conn.on('connect', resolve);
-        conn.on('error', reject);
-    });
-
-    // Start listening for connected devices:
-    conn.write(plistSerialize({
-        MessageType: 'Listen',
-        ClientVersionString: 'usbmux-client',
-        ProgName: 'usbmux-client'
-    }));
-
-    const response = await readMessageFromStream(conn);
-    if (
-        response === null ||
-        response.MessageType !== 'Result' ||
-        response.Number !== 0
-    ) {
-        throw new Error('Usbmux connection failed');
-    };
-
-    return new UsbmuxClient(conn);
-}
 
 function plistSerialize(value: any) {
     const plistString = plist.build(value)
@@ -74,12 +47,66 @@ const readMessageFromStream = async (stream: net.Socket): Promise<ResponseMessag
     return plist.parse(payload.toString('utf8')) as ResponseMessage;
 }
 
-class UsbmuxClient {
+const connectSocket = async (options: net.NetConnectOpts) => {
+    const conn = net.connect(options);
+
+    await new Promise((resolve, reject) => {
+        conn.once('connect', resolve);
+        conn.once('error', reject);
+    });
+
+    return conn;
+}
+
+export class UsbmuxClient {
 
     constructor(
-        private socket: net.Socket
+        private connectionOptions: net.NetConnectOpts = DEFAULT_ADDRESS
     ) {
-        this.listenToMessages(socket)
+        this.startListeningForDevices().catch(() => {});
+    }
+
+    deviceMonitorConnection: net.Socket | Promise<net.Socket> | undefined;
+
+    private async startListeningForDevices() {
+        if (this.deviceMonitorConnection instanceof net.Socket) return;
+        else if (this.deviceMonitorConnection?.then) return this.deviceMonitorConnection;
+
+        const connectionDeferred = getDeferred<net.Socket>();
+        this.deviceMonitorConnection = connectionDeferred.promise;
+
+        try {
+            const conn = await connectSocket(this.connectionOptions);
+
+            // Start listening for connected devices:
+            conn.write(plistSerialize({
+                MessageType: 'Listen',
+                ClientVersionString: 'usbmux-client',
+                ProgName: 'usbmux-client'
+            }));
+
+            const response = await readMessageFromStream(conn);
+            if (
+                response === null ||
+                response.MessageType !== 'Result' ||
+                response.Number !== 0
+            ) {
+                throw new Error('Usbmux connection failed');
+            };
+
+            this.listenToMessages(conn);
+            await delay(10); // Brief delay to make sure we get already-connected device updates
+
+            connectionDeferred.resolve(conn);
+            this.deviceMonitorConnection = conn;
+            conn.on('close', () => {
+                this.deviceMonitorConnection = undefined;
+                this.deviceData = {};
+            });
+        } catch (e: any) {
+            connectionDeferred.reject(e);
+            throw e;
+        }
     }
 
     private deviceData: Record<string, Record<string, string | number>> = {};
@@ -102,15 +129,21 @@ class UsbmuxClient {
         }
     }
 
-    getDevices() {
+    async getDevices() {
+        await this.startListeningForDevices();
         return this.deviceData;
     }
 
     close() {
-        this.socket.end();
+        if (this.deviceMonitorConnection instanceof net.Socket) {
+            this.deviceMonitorConnection?.end();
+        } else if (this.deviceMonitorConnection?.then) {
+            this.deviceMonitorConnection
+                .then((conn) => conn.destroy())
+                .catch(() => {});
+        }
+
         this.deviceData = {};
     }
 
 }
-
-export type { UsbmuxClient };

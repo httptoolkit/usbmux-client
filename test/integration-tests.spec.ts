@@ -1,7 +1,6 @@
 import { expect } from "chai";
-import { delay } from "@httptoolkit/util";
 
-import { UsbmuxClient, getUsbmuxClient } from "../src/index";
+import { UsbmuxClient } from "../src/index";
 
 describe("Usbmux-client integration tests", () => {
 
@@ -14,10 +13,9 @@ describe("Usbmux-client integration tests", () => {
 
     if (process.env.CI) {
         it("can query the connected devices (seeing no results)", async () => {
-            client = await getUsbmuxClient();
-            await delay(10); // Not clear this is necessary, but not unhelpful
+            client = new UsbmuxClient();
 
-            const devices = client.getDevices();
+            const devices = await client.getDevices();
 
             // Tests assume no devices in CI but this at least confirms we can connect
             // to Usbmux successfully.
@@ -25,10 +23,9 @@ describe("Usbmux-client integration tests", () => {
         });
     } else {
         it("can detect the connected device", async () => {
-            client = await getUsbmuxClient();
-            await delay(10); // Not clear this is necessary, but not unhelpful
+            client = new UsbmuxClient();
 
-            const devices = client.getDevices();
+            const devices = await client.getDevices();
 
             // Local integratiion testing assumes you'll test with a real device
             expect(devices).to.be.an('object');
