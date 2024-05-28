@@ -75,23 +75,26 @@ describe("Usbmux-client unit tests", () => {
 
     it("should connect & report no connected devices initially", async () => {
         client = new UsbmuxClient({ port: mockServerPort! });
+        const devicesPromise = client.getDevices();
         const socket = await waitForSocket();
 
         await expectMessage(socket, 'LISTEN_REQUEST');
         socket.write(Buffer.from(MESSAGES.OK_RESULT, 'base64'));
 ;
-        const devices = await client.getDevices();
+        const devices = await devicesPromise;
         expect(Object.keys(devices)).to.have.length(0);
     });
 
     it("should connect & report a connected device after one appears", async () => {
         client = new UsbmuxClient({ port: mockServerPort! });
+        const devicesPromise = client.getDevices();
         const socket = await waitForSocket();
 
         await expectMessage(socket, 'LISTEN_REQUEST');
         socket.write(Buffer.from(MESSAGES.OK_RESULT, 'base64'));
 
-        expect(Object.keys(await client.getDevices())).to.have.length(0);
+        const devices = await devicesPromise;
+        expect(Object.keys(devices)).to.have.length(0);
 
         socket.write(Buffer.from(MESSAGES.DEVICE_ATTACHED_EVENT, 'base64'));
         await delay(10);
@@ -100,25 +103,26 @@ describe("Usbmux-client unit tests", () => {
 
     it("should handle reconnecting after disconnection", async () => {
         client = new UsbmuxClient({ port: mockServerPort! });
-        let socket = await waitForSocket();
+        const devicesPromise = client.getDevices();
 
+        let socket = await waitForSocket();
         await expectMessage(socket, 'LISTEN_REQUEST');
         socket.write(Buffer.from(MESSAGES.OK_RESULT, 'base64'));
 
-        expect(Object.keys(await client.getDevices())).to.have.length(0);
+        expect(Object.keys(await devicesPromise)).to.have.length(0);
 
         socket.destroy();
         serverSocket = undefined;
         await delay(10);
 
-        const deviceQuery = client.getDevices();
+        const device2ndQuery = client.getDevices();
 
         socket = await waitForSocket();
         await expectMessage(socket, 'LISTEN_REQUEST');
         socket.write(Buffer.from(MESSAGES.OK_RESULT, 'base64'));
         socket.write(Buffer.from(MESSAGES.DEVICE_ATTACHED_EVENT, 'base64'));
 
-        expect(Object.keys(await deviceQuery)).to.have.length(1);
+        expect(Object.keys(await device2ndQuery)).to.have.length(1);
     });
 
     it("should handle reconnecting to an initially unresponsive server", async () => {
@@ -127,7 +131,7 @@ describe("Usbmux-client unit tests", () => {
 
         client = new UsbmuxClient({ port });
 
-        const deviceQueryResult = await client.getDevices().catch(e => e);;
+        const deviceQueryResult = await client.getDevices().catch(e => e);
         expect(deviceQueryResult).to.be.instanceOf(Error);
         expect(deviceQueryResult.message).to.contain("ECONNREFUSED");
 

@@ -158,9 +158,7 @@ export class UsbmuxClient {
 
     constructor(
         private connectionOptions: net.NetConnectOpts = DEFAULT_ADDRESS
-    ) {
-        this.startListeningForDevices().catch(() => {});
-    }
+    ) {}
 
     deviceMonitorConnection: net.Socket | Promise<net.Socket> | undefined;
 
