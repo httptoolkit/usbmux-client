@@ -66,7 +66,7 @@ describe("Usbmux-client unit tests", () => {
     });
 
     afterEach(async () => {
-        client?.close();
+        await client?.close();
         client = undefined;
 
         await mockServer.destroy();

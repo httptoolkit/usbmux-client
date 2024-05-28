@@ -6,8 +6,8 @@ describe("Usbmux-client integration tests", () => {
 
     let client: UsbmuxClient | undefined;
 
-    afterEach(() => {
-        client?.close();
+    afterEach(async () => {
+        await client?.close();
         client = undefined;
     });
 
@@ -39,6 +39,18 @@ describe("Usbmux-client integration tests", () => {
             expect(devices[deviceId].ConnectionType).to.equal('USB');
             expect(devices[deviceId].SerialNumber).to.be.a('string');
             expect((devices[deviceId].SerialNumber as any).length).to.equal(40);
+        });
+
+        it("can read from lockdown service", async () => {
+            client = new UsbmuxClient();
+            const deviceValues = await client.queryAllDeviceValues(1);
+
+            console.log(deviceValues);
+
+            expect(deviceValues.DeviceName?.length).to.be.greaterThan(0);
+            expect(deviceValues.DeviceClass?.length).to.be.greaterThan(0);
+            expect(deviceValues.ProductVersion?.length).to.be.greaterThan(0);
+            expect(deviceValues.UniqueDeviceID?.length).to.be.greaterThan(0);
         });
     }
 
