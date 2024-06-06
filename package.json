@@ -1,6 +1,6 @@
 {
   "name": "usbmux-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A pure-js Node.js library for communicating with iPhones over USB via usbmux",
   "main": "dist/index.js",
   "scripts": {
