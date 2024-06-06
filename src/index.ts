@@ -134,7 +134,7 @@ const readMessageFromLockdowndStream = async (stream: net.Socket): Promise<Lockd
 
     const payloadLength = header.readUInt32BE(0);
     const payload = await readBytes(stream, payloadLength);
-    
+
     const data = plist.parse(payload.toString('utf8'));
     if ((data as any).Error) {
         throw new Error(`Received lockdown error: ${(data as any).Error.toString()}`);
@@ -168,6 +168,11 @@ export class UsbmuxClient {
 
         const connectionDeferred = getDeferred<net.Socket>();
         this.deviceMonitorConnection = connectionDeferred.promise;
+
+        // Ignore any uncaught errors here - they'll be thrown by any pending getDevices()
+        // calls waiting on the promise, or thrown separately (in the catch block below) by
+        // this call, but we don't want uncaught rejection issues in other cases.
+        connectionDeferred.promise.catch(() => {});
 
         try {
             const conn = await connectSocket(this.connectionOptions);
