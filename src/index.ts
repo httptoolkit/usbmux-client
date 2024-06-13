@@ -45,7 +45,7 @@ function requestTunnelMessage(deviceId: number, port: number) {
 }
 
 type ResultMessage = { MessageType: 'Result', Number: number };
-type AttachedMessage = { MessageType: 'Attached', DeviceID: number, Properties: Record<string, string | number> };
+type AttachedMessage = { MessageType: 'Attached', DeviceID: number, Properties: DeviceInfo };
 type DetachedMessage = { MessageType: 'Detached', DeviceID: number };
 
 type ResponseMessage =
@@ -154,6 +154,16 @@ const connectSocket = async (options: net.NetConnectOpts) => {
     return conn;
 }
 
+// Most properties optional because we're not sure what's actually guaranteed:
+export interface DeviceInfo {
+    DeviceID: number;
+    ConnectionSpeed?: number;
+    ConnectionType?: string;
+    LocationID?: number;
+    ProductID?: number;
+    SerialNumber?: string;
+}
+
 export class UsbmuxClient {
 
     constructor(
@@ -209,7 +219,7 @@ export class UsbmuxClient {
         }
     }
 
-    private deviceData: Record<string, Record<string, string | number>> = {};
+    private deviceData: Record<string, DeviceInfo> = {};
 
     // Listen for events by using readMessageFromStream in an async iterator:
     async listenToMessages(socket: net.Socket) {
@@ -229,7 +239,7 @@ export class UsbmuxClient {
         }
     }
 
-    async getDevices() {
+    async getDevices(): Promise<Record<string, DeviceInfo>> {
         await this.startListeningForDevices();
         return this.deviceData;
     }
