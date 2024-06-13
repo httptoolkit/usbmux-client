@@ -133,7 +133,7 @@ describe("Usbmux-client unit tests", () => {
 
         const deviceQueryResult = await client.getDevices().catch(e => e);
         expect(deviceQueryResult).to.be.instanceOf(Error);
-        expect(deviceQueryResult.message).to.contain("ECONNREFUSED");
+        expect(deviceQueryResult.code).to.equal("ECONNREFUSED");
 
         await startServer(port);
 
