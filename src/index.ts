@@ -5,7 +5,7 @@ import { delay, getDeferred, CustomError } from '@httptoolkit/util';
 import { readBytes } from './stream-utils';
 
 const DEFAULT_ADDRESS = process.platform === 'win32'
-    ? { port: 27015 }
+    ? { port: 27015, autoSelectFamily: true }
     : { path: '/var/run/usbmuxd' };
 
 const CLIENT_VERSION = 'usbmux-client';
