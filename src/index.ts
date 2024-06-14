@@ -261,7 +261,7 @@ export class UsbmuxClient {
 
     readonly openTunnels: Array<net.Socket> = [];
 
-    async createDeviceTunnel(deviceId: number, port: number): Promise<net.Socket> {
+    async createDeviceTunnel(deviceId: string | number, port: string | number): Promise<net.Socket> {
         const conn = await connectSocket(this.connectionOptions);
 
         this.openTunnels.push(conn);
@@ -271,7 +271,7 @@ export class UsbmuxClient {
             this.openTunnels.splice(index, 1);
         });
 
-        conn.write(requestTunnelMessage(deviceId, port));
+        conn.write(requestTunnelMessage(Number(deviceId), Number(port)));
         const response = await readPlistMessageFromStream(conn);
 
         if (
@@ -286,7 +286,7 @@ export class UsbmuxClient {
         return conn;
     }
 
-    private async getLockdownTunnel(deviceId: number) {
+    private async getLockdownTunnel(deviceId: string | number) {
         const tunnel = await this.createDeviceTunnel(deviceId, 62078);
         tunnel.write(lockdowndMessage({ Label: 'usbmux-client', Request: 'QueryType' }));
 
@@ -296,7 +296,7 @@ export class UsbmuxClient {
         return tunnel;
     }
 
-    async queryDeviceValue<K extends LockdownKey>(deviceId: number, key: K) {
+    async queryDeviceValue<K extends LockdownKey>(deviceId: string | number, key: K) {
         const tunnel = await this.getLockdownTunnel(deviceId);
         tunnel.write(lockdowndMessage({ Label: 'usbmux-client', Request: 'GetValue', Key: key }));
         const message = await readMessageFromLockdowndStream(tunnel) as GetValueResult<K>
@@ -304,7 +304,7 @@ export class UsbmuxClient {
         return message.Value;
     }
 
-    async queryAllDeviceValues(deviceId: number) {
+    async queryAllDeviceValues(deviceId: string | number) {
         const tunnel = await this.getLockdownTunnel(deviceId);
         tunnel.write(lockdowndMessage({ Label: 'usbmux-client', Request: 'GetValue' }));
         const message = await readMessageFromLockdowndStream(tunnel) as GetValuesResult
