@@ -5,7 +5,7 @@ jobs:
     name: Build & test
     runs-on:
       - ubuntu-latest
-      - macos-13
+      - macos-12
 
     container: httptoolkit/act-build-base:v3.0.1
 
