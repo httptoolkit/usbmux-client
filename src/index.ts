@@ -13,7 +13,7 @@ function plistSerialize(value: any) {
     const plistBuffer = Buffer.from(plistString, 'utf8');
 
     const length = 16 + plistBuffer.byteLength; // Header always 16 bytes
-    const version = 0; // Also called 'reserved'? Always 0
+    const version = 1; // Also called 'reserved' - some docs say 0, but only 1 seems to work
     const messageType = 8; // 8 is 'plist' message type
     const tag = 1; // Echoed in responses, not used for now
 
