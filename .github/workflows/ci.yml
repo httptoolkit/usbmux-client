@@ -3,7 +3,10 @@ on: [push, pull_request]
 jobs:
   build:
     name: Build & test
-    runs-on: ubuntu-latest
+    runs-on:
+      - ubuntu-latest
+      - macos-latest
+
     container: httptoolkit/act-build-base:v3.0.1
 
     strategy:
