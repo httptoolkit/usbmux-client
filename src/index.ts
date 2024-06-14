@@ -26,22 +26,20 @@ function plistSerialize(value: any) {
     return Buffer.concat([messageHeader, plistBuffer], length);
 }
 
+const swap16bitEndianness = (port: number) => {
+    const buffer = Buffer.alloc(2);
+    buffer.writeUint16LE(port);
+    return buffer.readUint16BE();
+}
+
 function requestTunnelMessage(deviceId: number, port: number) {
-    const length = 16 + 8; // 16byte header, 4b device id, 2b port, and then 2b alignment (I think?)
-    const version = 0; // Also called 'reserved'? Always 0
-    const messageType = 2; // 2 is 'connect' message type
-    const tag = 1; // Echoed in responses, not used for now
-
-    const message = Buffer.alloc(length);
-    message.writeUInt32LE(length, 0);
-    message.writeUInt32LE(version, 4);
-    message.writeUInt32LE(messageType, 8);
-    message.writeUInt32LE(tag, 12);
-
-    message.writeUInt32LE(deviceId, 16);
-    message.writeUInt16BE(port, 20); // N.b. big endian
-
-    return message;
+    return plistSerialize({
+        MessageType: 'Connect',
+        ClientVersionString: 'usbmux-client',
+        ProgName: 'usbmux-client',
+        DeviceID: deviceId,
+        PortNumber: swap16bitEndianness(port)
+    });
 }
 
 type ResultMessage = { MessageType: 'Result', Number: number };
@@ -271,16 +269,16 @@ export class UsbmuxClient {
         });
 
         conn.write(requestTunnelMessage(deviceId, port));
-        const response = await readUsbmuxdMessageFromStream(conn);
+        const response = await readPlistMessageFromStream(conn);
 
-        if (response === null) {
-            throw new Error(`No tunnel response available`);
-        } else if (response.byteLength !== 4) {
-            throw new Error(`Unexpected tunnel response length: ${response.byteLength}`);
-        }
-
-        const result = response.readUint32LE();
-        if (result !== 0) throw new Error(`Tunnel request failed with result code ${result}`);
+        if (
+            response === null ||
+            response.MessageType !== 'Result' ||
+            response.Number !== 0
+        ) {
+            console.warn(`Unexpected usbmux response`, response);
+            throw new Error('Usbmux connection failed');
+        };
 
         return conn;
     }
