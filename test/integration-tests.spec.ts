@@ -43,7 +43,11 @@ describe("Usbmux-client integration tests", () => {
 
         it("can read from lockdown service", async () => {
             client = new UsbmuxClient();
-            const deviceValues = await client.queryAllDeviceValues(1);
+
+            const devices = await client.getDevices();
+            const deviceId = Object.keys(devices)[0];
+
+            const deviceValues = await client.queryAllDeviceValues(deviceId);
 
             console.log(deviceValues);
 
