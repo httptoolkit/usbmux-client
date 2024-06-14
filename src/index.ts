@@ -1,6 +1,6 @@
 import * as net from 'net';
 import * as plist from 'plist';
-import { delay, getDeferred } from '@httptoolkit/util';
+import { delay, getDeferred, CustomError } from '@httptoolkit/util';
 
 import { readBytes } from './stream-utils';
 
@@ -165,6 +165,22 @@ export interface DeviceInfo {
     SerialNumber?: string;
 }
 
+export class UsbmuxError extends CustomError {
+
+    constructor(operation: string, response: ResponseMessage | null) {
+        const failureType = response === null
+                ? 'usbmux-connection-failure'
+            : response.MessageType !== 'Result'
+                ? `usbmux-unexpected-${response.MessageType}-message`
+            : `usbmux-unexpected-${response.Number}-result`;
+
+        super(`Usbmux ${operation} request failed: ${failureType}`, {
+            code: failureType
+        });
+    }
+
+}
+
 export class UsbmuxClient {
 
     constructor(
@@ -201,7 +217,7 @@ export class UsbmuxClient {
                 response.MessageType !== 'Result' ||
                 response.Number !== 0
             ) {
-                throw new Error('Usbmux connection failed');
+                throw new UsbmuxError('listen', response);
             };
 
             this.listenToMessages(conn);
@@ -279,8 +295,7 @@ export class UsbmuxClient {
             response.MessageType !== 'Result' ||
             response.Number !== 0
         ) {
-            console.warn(`Unexpected usbmux response`, response);
-            throw new Error('Usbmux connection failed');
+            throw new UsbmuxError('tunnel', response);
         };
 
         return conn;
