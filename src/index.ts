@@ -8,6 +8,9 @@ const DEFAULT_ADDRESS = process.platform === 'win32'
     ? { port: 27015 }
     : { path: '/var/run/usbmuxd' };
 
+const CLIENT_VERSION = 'usbmux-client';
+const PROG_NAME = 'usbmux-client';
+
 function plistSerialize(value: any) {
     const plistString = plist.build(value)
     const plistBuffer = Buffer.from(plistString, 'utf8');
@@ -35,8 +38,8 @@ const swap16bitEndianness = (port: number) => {
 function requestTunnelMessage(deviceId: number, port: number) {
     return plistSerialize({
         MessageType: 'Connect',
-        ClientVersionString: 'usbmux-client',
-        ProgName: 'usbmux-client',
+        ClientVersionString: CLIENT_VERSION,
+        ProgName: PROG_NAME,
         DeviceID: deviceId,
         PortNumber: swap16bitEndianness(port)
     });
@@ -188,8 +191,8 @@ export class UsbmuxClient {
             // Start listening for connected devices:
             conn.write(plistSerialize({
                 MessageType: 'Listen',
-                ClientVersionString: 'usbmux-client',
-                ProgName: 'usbmux-client'
+                ClientVersionString: CLIENT_VERSION,
+                ProgName: PROG_NAME
             }));
 
             const response = await readPlistMessageFromStream(conn);
